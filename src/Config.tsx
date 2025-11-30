@@ -125,9 +125,9 @@ function Config() {
         <div className="scale-control">
           <input
             type="range"
-            min="0.5"
-            max="1.5"
-            step="0.1"
+            min="0.25"
+            max="0.75"
+            step="0.05"
             value={config.scale}
             onChange={(e) => handleScaleChange(parseFloat(e.target.value))}
             className="scale-slider"
@@ -135,11 +135,11 @@ function Config() {
           <span className="scale-value">{(config.scale * 100).toFixed(0)}%</span>
         </div>
         <div className="scale-presets">
+          <button onClick={() => handleScaleChange(0.25)} className={config.scale === 0.25 ? 'active' : ''}>25%</button>
+          <button onClick={() => handleScaleChange(0.375)} className={config.scale === 0.375 ? 'active' : ''}>37.5%</button>
           <button onClick={() => handleScaleChange(0.5)} className={config.scale === 0.5 ? 'active' : ''}>50%</button>
+          <button onClick={() => handleScaleChange(0.625)} className={config.scale === 0.625 ? 'active' : ''}>62.5%</button>
           <button onClick={() => handleScaleChange(0.75)} className={config.scale === 0.75 ? 'active' : ''}>75%</button>
-          <button onClick={() => handleScaleChange(1)} className={config.scale === 1 ? 'active' : ''}>100%</button>
-          <button onClick={() => handleScaleChange(1.25)} className={config.scale === 1.25 ? 'active' : ''}>125%</button>
-          <button onClick={() => handleScaleChange(1.5)} className={config.scale === 1.5 ? 'active' : ''}>150%</button>
         </div>
       </div>
 

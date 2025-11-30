@@ -23,7 +23,7 @@ export interface PlayerConfig {
 }
 
 export const defaultConfig: PlayerConfig = {
-  scale: 1,
+  scale: 0.5,
   backgroundMode: 'cover',
   showProgressBar: true
 }
