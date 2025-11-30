@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { PlayerConfig } from './firebase'
+import { PlayerConfig, PLAYER_SLIDE } from './firebase'
+import Player from './Player'
 import './ImageSlideshow.css'
 
 interface ImageSlideshowProps {
@@ -8,46 +9,63 @@ interface ImageSlideshowProps {
 
 function ImageSlideshow({ config }: ImageSlideshowProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [currentImage, setCurrentImage] = useState<string | null>(null)
-  const [nextImage, setNextImage] = useState<string | null>(null)
+  const [currentSlide, setCurrentSlide] = useState<string | null>(null)
+  const [nextSlide, setNextSlide] = useState<string | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
 
-  // Determine which images to show
-  const imagesToShow = config.frozenImage
+  // Determine which slides to show
+  const slidesToShow = config.frozenImage
     ? [config.frozenImage]
     : config.enabledImages.length > 0
       ? config.enabledImages
       : config.availableImages
 
   useEffect(() => {
-    if (imagesToShow.length === 0) return
+    if (slidesToShow.length === 0) return
 
-    // Set initial image
-    setCurrentImage(imagesToShow[0])
+    // Set initial slide
+    setCurrentSlide(slidesToShow[0])
     setCurrentIndex(0)
-  }, [imagesToShow.length])
+  }, [slidesToShow.length])
 
   useEffect(() => {
-    // If frozen or only one image, don't cycle
-    if (config.frozenImage || imagesToShow.length <= 1) return
+    // If frozen or only one slide, don't cycle
+    if (config.frozenImage || slidesToShow.length <= 1) return
 
     const interval = setInterval(() => {
-      const nextIndex = (currentIndex + 1) % imagesToShow.length
-      setNextImage(imagesToShow[nextIndex])
+      const nextIndex = (currentIndex + 1) % slidesToShow.length
+      setNextSlide(slidesToShow[nextIndex])
       setIsTransitioning(true)
 
       setTimeout(() => {
-        setCurrentImage(imagesToShow[nextIndex])
+        setCurrentSlide(slidesToShow[nextIndex])
         setCurrentIndex(nextIndex)
         setIsTransitioning(false)
-        setNextImage(null)
+        setNextSlide(null)
       }, 1000)
     }, config.imageInterval * 1000)
 
     return () => clearInterval(interval)
-  }, [config.frozenImage, config.imageInterval, currentIndex, imagesToShow])
+  }, [config.frozenImage, config.imageInterval, currentIndex, slidesToShow])
 
-  if (imagesToShow.length === 0) {
+  const renderSlide = (slide: string, className: string) => {
+    if (slide === PLAYER_SLIDE) {
+      return (
+        <div className={className}>
+          <Player />
+        </div>
+      )
+    }
+    return (
+      <img
+        src={`/img/${slide}`}
+        alt="Slideshow"
+        className={className}
+      />
+    )
+  }
+
+  if (slidesToShow.length === 0) {
     return (
       <div className="slideshow-container">
         <p className="no-images">Keine Bilder verfügbar</p>
@@ -57,20 +75,8 @@ function ImageSlideshow({ config }: ImageSlideshowProps) {
 
   return (
     <div className="slideshow-container">
-      {currentImage && (
-        <img
-          src={`/img/${currentImage}`}
-          alt="Slideshow"
-          className={`slideshow-image ${isTransitioning ? 'fading-out' : ''}`}
-        />
-      )}
-      {nextImage && isTransitioning && (
-        <img
-          src={`/img/${nextImage}`}
-          alt="Slideshow"
-          className="slideshow-image fading-in"
-        />
-      )}
+      {currentSlide && renderSlide(currentSlide, `slideshow-image ${isTransitioning ? 'fading-out' : ''}`)}
+      {nextSlide && isTransitioning && renderSlide(nextSlide, 'slideshow-image fading-in')}
     </div>
   )
 }

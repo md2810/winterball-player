@@ -2,6 +2,9 @@ import { initializeApp } from 'firebase/app'
 import { getDatabase, ref, onValue, set } from 'firebase/database'
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth'
 
+// Special constant for the Spotify Player slide
+export const PLAYER_SLIDE = '__player__'
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
@@ -32,9 +35,9 @@ export const defaultConfig: PlayerConfig = {
   scale: 0.5,
   backgroundMode: 'cover',
   showProgressBar: true,
-  displayMode: 'player',
-  availableImages: ['campaign1.png'],
-  enabledImages: ['campaign1.png'],
+  displayMode: 'images',
+  availableImages: [PLAYER_SLIDE, 'campaign1.png'],
+  enabledImages: [PLAYER_SLIDE, 'campaign1.png'],
   frozenImage: null,
   imageInterval: 10
 }
