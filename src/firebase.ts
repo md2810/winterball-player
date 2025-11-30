@@ -33,8 +33,8 @@ export const defaultConfig: PlayerConfig = {
   backgroundMode: 'cover',
   showProgressBar: true,
   displayMode: 'player',
-  availableImages: [],
-  enabledImages: [],
+  availableImages: ['campaign1.png'],
+  enabledImages: ['campaign1.png'],
   frozenImage: null,
   imageInterval: 10
 }
