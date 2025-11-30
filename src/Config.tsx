@@ -185,7 +185,7 @@ function Config() {
         {saved && <span className="status-saved">Gespeichert!</span>}
       </div>
 
-      <a href="/" className="back-link">Zurück zum Player</a>
+      <a href="#/" className="back-link">Zurück zum Player</a>
     </div>
   )
 }
