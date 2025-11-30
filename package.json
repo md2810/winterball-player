@@ -11,8 +11,10 @@
     "preview": "wrangler pages dev dist --port 3000"
   },
   "dependencies": {
+    "firebase": "^12.6.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.9.6"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251128.0",
