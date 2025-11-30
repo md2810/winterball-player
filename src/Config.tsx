@@ -96,8 +96,10 @@ function Config() {
 
   const handleAddImageUrl = async () => {
     if (!newImageUrl.trim()) return
-    const imageUrl = newImageUrl.trim()
-    if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) return
+    let imageUrl = newImageUrl.trim()
+    if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+      imageUrl = 'https://' + imageUrl
+    }
     if (config.availableImages.includes(imageUrl)) return
     const newConfig = {
       ...config,
