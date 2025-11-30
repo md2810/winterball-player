@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { subscribeToConfig, PlayerConfig, defaultConfig } from './firebase'
+import Player from './Player'
 import ImageSlideshow from './ImageSlideshow'
 
 function Home() {
@@ -11,6 +12,10 @@ function Home() {
     })
     return () => unsubscribe()
   }, [])
+
+  if (config.displayMode === 'player') {
+    return <Player />
+  }
 
   return <ImageSlideshow config={config} />
 }

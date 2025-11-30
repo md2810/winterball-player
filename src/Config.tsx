@@ -63,6 +63,12 @@ function Config() {
     await saveConfig(newConfig)
   }
 
+  const handleDisplayModeChange = async (mode: 'player' | 'images') => {
+    const newConfig = { ...config, displayMode: mode }
+    setConfig(newConfig)
+    await saveConfig(newConfig)
+  }
+
   const handleAddPlayer = async () => {
     if (config.availableImages.includes(PLAYER_SLIDE)) return
     const newConfig = {
@@ -247,6 +253,28 @@ function Config() {
       </div>
 
       <div className="config-section">
+        <h2>Anzeigemodus</h2>
+        <div className="background-options">
+          <button
+            className={`background-option ${config.displayMode === 'player' ? 'active' : ''}`}
+            onClick={() => handleDisplayModeChange('player')}
+          >
+            <div className="option-preview player-preview"></div>
+            <span>Nur Player</span>
+          </button>
+          <button
+            className={`background-option ${config.displayMode === 'images' ? 'active' : ''}`}
+            onClick={() => handleDisplayModeChange('images')}
+          >
+            <div className="option-preview images-preview"></div>
+            <span>Slideshow</span>
+          </button>
+        </div>
+      </div>
+
+      {config.displayMode === 'images' && (
+        <>
+      <div className="config-section">
         <h2>Slideshow verwalten</h2>
         <div className="add-image-form">
           <input
@@ -329,6 +357,8 @@ function Config() {
           <button onClick={() => handleIntervalChange(60)} className={config.imageInterval === 60 ? 'active' : ''}>60s</button>
         </div>
       </div>
+        </>
+      )}
 
       <div className="config-status">
         {saving && <span className="status-saving">Speichern...</span>}

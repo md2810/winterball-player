@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { subscribeToConfig, PlayerConfig, defaultConfig } from './firebase'
 import './Player.css'
 
@@ -13,8 +14,6 @@ interface SpotifyTrack {
 
 function Player() {
   const [currentTrack, setCurrentTrack] = useState<SpotifyTrack | null>(null)
-  const [nextTrack, setNextTrack] = useState<SpotifyTrack | null>(null)
-  const [isTransitioning, setIsTransitioning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [config, setConfig] = useState<PlayerConfig>(defaultConfig)
@@ -75,9 +74,7 @@ function Player() {
         return
       }
       if (response.status === 204) {
-        if (currentTrack) {
-          triggerTransition(null)
-        }
+        setCurrentTrack(null)
         return
       }
       const data = await response.json()
@@ -91,39 +88,16 @@ function Player() {
       lastFetchTime.current = Date.now()
       lastProgressMs.current = track.progressMs
 
-      // Check if track changed
-      if (currentTrack && (currentTrack.name !== track.name || currentTrack.albumArt !== track.albumArt)) {
-        triggerTransition(track)
-      } else if (!currentTrack) {
-        setCurrentTrack(track)
+      // Update track (framer-motion handles the transition)
+      setCurrentTrack(track)
+      if (!currentTrack || currentTrack.name !== track.name) {
         setProgress((track.progressMs / track.durationMs) * 100)
-      } else {
-        // Same track, just update progress
-        setCurrentTrack(track)
       }
       setError(null)
     } catch (err) {
       setError('Fehler beim Laden des Songs')
       console.error(err)
     }
-  }
-
-  const triggerTransition = (newTrack: SpotifyTrack | null) => {
-    if (isTransitioning) return
-
-    setNextTrack(newTrack)
-    setIsTransitioning(true)
-
-    setTimeout(() => {
-      setCurrentTrack(newTrack)
-      setNextTrack(null)
-      setIsTransitioning(false)
-      if (newTrack) {
-        setProgress((newTrack.progressMs / newTrack.durationMs) * 100)
-        lastProgressMs.current = newTrack.progressMs
-        lastFetchTime.current = Date.now()
-      }
-    }, 800)
   }
 
   const handleLogin = () => {
@@ -157,7 +131,7 @@ function Player() {
     )
   }
 
-  if (!currentTrack && !nextTrack) {
+  if (!currentTrack) {
     return (
       <div className={`player-container ${backgroundClass}`}>
         <p className="no-track">Kein Song wird gerade abgespielt</p>
@@ -165,28 +139,28 @@ function Player() {
     )
   }
 
+  // Unique key for track changes to trigger animations
+  const trackKey = `${currentTrack.name}-${currentTrack.albumArt}`
+
   return (
     <div className={`player-container ${backgroundClass}`}>
       {/* Background layers */}
       {config.backgroundMode === 'cover' && (
-        <>
-          {currentTrack && (
-            <div
-              className={`background-blur ${isTransitioning ? 'fading-out' : ''}`}
-              style={{ backgroundImage: `url(${currentTrack.albumArt})` }}
-            />
-          )}
-          {nextTrack && isTransitioning && (
-            <div
-              className="background-blur fading-in"
-              style={{ backgroundImage: `url(${nextTrack.albumArt})` }}
-            />
-          )}
-        </>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={trackKey + '-bg'}
+            className="background-blur"
+            style={{ backgroundImage: `url(${currentTrack.albumArt})` }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.7 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: 'easeInOut' }}
+          />
+        </AnimatePresence>
       )}
 
       {/* Progress bar */}
-      {config.showProgressBar && currentTrack && (
+      {config.showProgressBar && (
         <div className="progress-bar-container">
           <div
             className="progress-bar"
@@ -199,62 +173,45 @@ function Player() {
       <div className="content-wrapper" style={{ gap: `${gap}px` }}>
         {/* Album art */}
         <div className="album-art-wrapper" style={{ width: coverSize, height: coverSize }}>
-          {currentTrack && (
-            <img
+          <AnimatePresence mode="wait">
+            <motion.img
+              key={trackKey + '-art'}
               src={currentTrack.albumArt}
               alt="Album Cover"
-              className={`album-art ${isTransitioning ? 'fading-out' : ''}`}
+              className="album-art"
               style={{ width: coverSize, height: coverSize }}
+              initial={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
             />
-          )}
-          {nextTrack && isTransitioning && (
-            <img
-              src={nextTrack.albumArt}
-              alt="Album Cover"
-              className="album-art fading-in"
-              style={{ width: coverSize, height: coverSize }}
-            />
-          )}
+          </AnimatePresence>
         </div>
 
         {/* Track info */}
         <div className="track-info">
-          <div className="track-name-wrapper">
-            {currentTrack && (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={trackKey + '-info'}
+              initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -20, filter: 'blur(8px)' }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+            >
               <h1
-                className={`track-name ${isTransitioning ? 'fading-out' : ''}`}
+                className="track-name"
                 style={{ fontSize: `${titleSize}rem` }}
               >
                 {currentTrack.name}
               </h1>
-            )}
-            {nextTrack && isTransitioning && (
-              <h1
-                className="track-name fading-in"
-                style={{ fontSize: `${titleSize}rem` }}
-              >
-                {nextTrack.name}
-              </h1>
-            )}
-          </div>
-          <div className="track-artists-wrapper">
-            {currentTrack && (
               <p
-                className={`track-artists ${isTransitioning ? 'fading-out' : ''}`}
+                className="track-artists"
                 style={{ fontSize: `${artistSize}rem` }}
               >
                 {currentTrack.artists.join(', ')}
               </p>
-            )}
-            {nextTrack && isTransitioning && (
-              <p
-                className="track-artists fading-in"
-                style={{ fontSize: `${artistSize}rem` }}
-              >
-                {nextTrack.artists.join(', ')}
-              </p>
-            )}
-          </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>
