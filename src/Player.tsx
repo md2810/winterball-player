@@ -16,6 +16,7 @@ function Player() {
   const [currentTrack, setCurrentTrack] = useState<SpotifyTrack | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [config, setConfig] = useState<PlayerConfig>(defaultConfig)
   const [progress, setProgress] = useState(0)
   const lastFetchTime = useRef<number>(Date.now())
@@ -61,8 +62,14 @@ function Player() {
       const response = await fetch('/api/auth/status')
       const data = await response.json()
       setIsAuthenticated(data.authenticated)
+      if (data.authenticated) {
+        // Fetch track immediately after auth check
+        await fetchCurrentTrack()
+      }
+      setIsLoading(false)
     } catch {
       setIsAuthenticated(false)
+      setIsLoading(false)
     }
   }
 
@@ -112,6 +119,15 @@ function Player() {
   const gap = Math.round(100 * scale)
 
   const backgroundClass = config.backgroundMode === 'black' ? 'background-black' : ''
+
+  // Show nothing while loading to prevent flash
+  if (isLoading) {
+    return (
+      <div className={`player-container ${backgroundClass}`}>
+        {/* Empty loading state - no flash */}
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     return (

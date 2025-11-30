@@ -1,30 +1,44 @@
 .config-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  padding: 40px;
+  background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #0d1b2a 100%);
+  padding: 40px 20px 60px;
   color: white;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .config-title {
-  font-size: 2.5rem;
-  margin-bottom: 40px;
-  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 0;
+  font-weight: 700;
+  background: linear-gradient(135deg, #fff 0%, #a0a0a0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .config-section {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  padding: 30px;
-  margin-bottom: 30px;
-  max-width: 600px;
+  padding: 24px;
+  margin-bottom: 20px;
+  max-width: 500px;
   margin-left: auto;
   margin-right: auto;
+  backdrop-filter: blur(10px);
 }
 
 .config-section h2 {
-  font-size: 1.5rem;
-  margin-bottom: 20px;
+  font-size: 1.2rem;
+  margin-bottom: 16px;
   color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
 }
 
 .scale-control {
@@ -239,8 +253,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 600px;
-  margin: 0 auto 40px;
+  max-width: 500px;
+  margin: 0 auto 30px;
+  padding: 0 4px;
 }
 
 .config-header .config-title {
@@ -248,18 +263,20 @@
 }
 
 .logout-button {
-  padding: 10px 20px;
-  font-size: 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
-  color: white;
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .logout-button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
 }
 
 /* Toggle Switch */
