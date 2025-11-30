@@ -20,12 +20,23 @@ export interface PlayerConfig {
   scale: number
   backgroundMode: 'cover' | 'black'
   showProgressBar: boolean
+  // Image slideshow settings
+  displayMode: 'player' | 'images'
+  availableImages: string[]
+  enabledImages: string[]
+  frozenImage: string | null
+  imageInterval: number // seconds
 }
 
 export const defaultConfig: PlayerConfig = {
   scale: 0.5,
   backgroundMode: 'cover',
-  showProgressBar: true
+  showProgressBar: true,
+  displayMode: 'player',
+  availableImages: [],
+  enabledImages: [],
+  frozenImage: null,
+  imageInterval: 10
 }
 
 const configRef = ref(database, 'config')

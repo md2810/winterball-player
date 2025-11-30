@@ -12,6 +12,7 @@ function Config() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState('')
+  const [newImageName, setNewImageName] = useState('')
 
   useEffect(() => {
     const unsubscribe = subscribeToAuth((authUser) => {
@@ -58,6 +59,60 @@ function Config() {
 
   const handleProgressBarChange = async (show: boolean) => {
     const newConfig = { ...config, showProgressBar: show }
+    setConfig(newConfig)
+    await saveConfig(newConfig)
+  }
+
+  const handleDisplayModeChange = async (mode: 'player' | 'images') => {
+    const newConfig = { ...config, displayMode: mode }
+    setConfig(newConfig)
+    await saveConfig(newConfig)
+  }
+
+  const handleAddImage = async () => {
+    if (!newImageName.trim()) return
+    const imageName = newImageName.trim()
+    if (config.availableImages.includes(imageName)) return
+    const newConfig = {
+      ...config,
+      availableImages: [...config.availableImages, imageName]
+    }
+    setConfig(newConfig)
+    setNewImageName('')
+    await saveConfig(newConfig)
+  }
+
+  const handleRemoveImage = async (imageName: string) => {
+    const newConfig = {
+      ...config,
+      availableImages: config.availableImages.filter(img => img !== imageName),
+      enabledImages: config.enabledImages.filter(img => img !== imageName),
+      frozenImage: config.frozenImage === imageName ? null : config.frozenImage
+    }
+    setConfig(newConfig)
+    await saveConfig(newConfig)
+  }
+
+  const handleToggleImageEnabled = async (imageName: string) => {
+    const isEnabled = config.enabledImages.includes(imageName)
+    const newConfig = {
+      ...config,
+      enabledImages: isEnabled
+        ? config.enabledImages.filter(img => img !== imageName)
+        : [...config.enabledImages, imageName]
+    }
+    setConfig(newConfig)
+    await saveConfig(newConfig)
+  }
+
+  const handleFreezeImage = async (imageName: string | null) => {
+    const newConfig = { ...config, frozenImage: imageName }
+    setConfig(newConfig)
+    await saveConfig(newConfig)
+  }
+
+  const handleIntervalChange = async (interval: number) => {
+    const newConfig = { ...config, imageInterval: interval }
     setConfig(newConfig)
     await saveConfig(newConfig)
   }
@@ -179,6 +234,101 @@ function Config() {
           </span>
         </div>
       </div>
+
+      <div className="config-section">
+        <h2>Anzeigemodus</h2>
+        <div className="background-options">
+          <button
+            className={`background-option ${config.displayMode === 'player' ? 'active' : ''}`}
+            onClick={() => handleDisplayModeChange('player')}
+          >
+            <div className="option-preview player-preview"></div>
+            <span>Spotify Player</span>
+          </button>
+          <button
+            className={`background-option ${config.displayMode === 'images' ? 'active' : ''}`}
+            onClick={() => handleDisplayModeChange('images')}
+          >
+            <div className="option-preview images-preview"></div>
+            <span>Bilder-Slideshow</span>
+          </button>
+        </div>
+      </div>
+
+      {config.displayMode === 'images' && (
+        <>
+          <div className="config-section">
+            <h2>Bilder verwalten</h2>
+            <div className="add-image-form">
+              <input
+                type="text"
+                placeholder="Dateiname (z.B. bild1.jpg)"
+                value={newImageName}
+                onChange={(e) => setNewImageName(e.target.value)}
+                className="image-input"
+                onKeyDown={(e) => e.key === 'Enter' && handleAddImage()}
+              />
+              <button onClick={handleAddImage} className="add-image-button">Hinzufügen</button>
+            </div>
+            <p className="image-hint">Bilder müssen in /img/ abgelegt sein</p>
+            {config.availableImages.length > 0 && (
+              <div className="image-list">
+                {config.availableImages.map((img) => (
+                  <div key={img} className="image-item">
+                    <img src={`/img/${img}`} alt={img} className="image-thumbnail" />
+                    <span className="image-name">{img}</span>
+                    <div className="image-actions">
+                      <label className="image-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={config.enabledImages.includes(img)}
+                          onChange={() => handleToggleImageEnabled(img)}
+                        />
+                        <span>Aktiv</span>
+                      </label>
+                      <button
+                        className={`freeze-button ${config.frozenImage === img ? 'frozen' : ''}`}
+                        onClick={() => handleFreezeImage(config.frozenImage === img ? null : img)}
+                      >
+                        {config.frozenImage === img ? 'Eingefroren' : 'Einfrieren'}
+                      </button>
+                      <button
+                        className="remove-image-button"
+                        onClick={() => handleRemoveImage(img)}
+                      >
+                        Entfernen
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="config-section">
+            <h2>Wechselintervall</h2>
+            <div className="interval-control">
+              <input
+                type="range"
+                min="3"
+                max="60"
+                step="1"
+                value={config.imageInterval}
+                onChange={(e) => handleIntervalChange(parseInt(e.target.value))}
+                className="scale-slider"
+              />
+              <span className="scale-value">{config.imageInterval}s</span>
+            </div>
+            <div className="scale-presets">
+              <button onClick={() => handleIntervalChange(5)} className={config.imageInterval === 5 ? 'active' : ''}>5s</button>
+              <button onClick={() => handleIntervalChange(10)} className={config.imageInterval === 10 ? 'active' : ''}>10s</button>
+              <button onClick={() => handleIntervalChange(15)} className={config.imageInterval === 15 ? 'active' : ''}>15s</button>
+              <button onClick={() => handleIntervalChange(30)} className={config.imageInterval === 30 ? 'active' : ''}>30s</button>
+              <button onClick={() => handleIntervalChange(60)} className={config.imageInterval === 60 ? 'active' : ''}>60s</button>
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="config-status">
         {saving && <span className="status-saving">Speichern...</span>}
