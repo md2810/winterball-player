@@ -80,25 +80,26 @@ function Player() {
         }
         return
       }
-      const data = await response.json() as SpotifyTrack
-      if (data.error) {
+      const data = await response.json()
+      if ('error' in data) {
         setError(data.error as string)
         return
       }
+      const track = data as SpotifyTrack
 
       // Update progress tracking
       lastFetchTime.current = Date.now()
-      lastProgressMs.current = data.progressMs
+      lastProgressMs.current = track.progressMs
 
       // Check if track changed
-      if (currentTrack && (currentTrack.name !== data.name || currentTrack.albumArt !== data.albumArt)) {
-        triggerTransition(data)
+      if (currentTrack && (currentTrack.name !== track.name || currentTrack.albumArt !== track.albumArt)) {
+        triggerTransition(track)
       } else if (!currentTrack) {
-        setCurrentTrack(data)
-        setProgress((data.progressMs / data.durationMs) * 100)
+        setCurrentTrack(track)
+        setProgress((track.progressMs / track.durationMs) * 100)
       } else {
         // Same track, just update progress
-        setCurrentTrack(data)
+        setCurrentTrack(track)
       }
       setError(null)
     } catch (err) {
