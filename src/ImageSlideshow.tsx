@@ -48,6 +48,8 @@ function ImageSlideshow({ config }: ImageSlideshowProps) {
     return () => clearInterval(interval)
   }, [config.frozenImage, config.imageInterval, currentIndex, slidesToShow])
 
+  const isImageUrl = (slide: string) => slide.startsWith('http://') || slide.startsWith('https://')
+
   const renderSlide = (slide: string, className: string) => {
     if (slide === PLAYER_SLIDE) {
       return (
@@ -56,9 +58,10 @@ function ImageSlideshow({ config }: ImageSlideshowProps) {
         </div>
       )
     }
+    const imageSrc = isImageUrl(slide) ? slide : `/img/${slide}`
     return (
       <img
-        src={`/img/${slide}`}
+        src={imageSrc}
         alt="Slideshow"
         className={className}
       />

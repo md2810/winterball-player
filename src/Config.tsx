@@ -13,6 +13,7 @@ function Config() {
   const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState('')
   const [newImageName, setNewImageName] = useState('')
+  const [newImageUrl, setNewImageUrl] = useState('')
 
   useEffect(() => {
     const unsubscribe = subscribeToAuth((authUser) => {
@@ -93,6 +94,22 @@ function Config() {
     await saveConfig(newConfig)
   }
 
+  const handleAddImageUrl = async () => {
+    if (!newImageUrl.trim()) return
+    const imageUrl = newImageUrl.trim()
+    if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) return
+    if (config.availableImages.includes(imageUrl)) return
+    const newConfig = {
+      ...config,
+      availableImages: [...config.availableImages, imageUrl]
+    }
+    setConfig(newConfig)
+    setNewImageUrl('')
+    await saveConfig(newConfig)
+  }
+
+  const isImageUrl = (slide: string) => slide.startsWith('http://') || slide.startsWith('https://')
+
   const handleRemoveImage = async (imageName: string) => {
     const newConfig = {
       ...config,
@@ -129,7 +146,17 @@ function Config() {
   }
 
   const getSlideDisplayName = (slide: string) => {
-    return slide === PLAYER_SLIDE ? 'Spotify Player' : slide
+    if (slide === PLAYER_SLIDE) return 'Spotify Player'
+    if (isImageUrl(slide)) {
+      try {
+        const url = new URL(slide)
+        const path = url.pathname.split('/').pop() || url.hostname
+        return path.length > 30 ? path.substring(0, 27) + '...' : path
+      } catch {
+        return slide.substring(0, 30) + '...'
+      }
+    }
+    return slide
   }
 
   const isPlayerSlide = (slide: string) => slide === PLAYER_SLIDE
@@ -287,6 +314,17 @@ function Config() {
           />
           <button onClick={handleAddImage} className="add-image-button">Hinzufügen</button>
         </div>
+        <div className="add-image-form">
+          <input
+            type="url"
+            placeholder="Bild-URL (https://...)"
+            value={newImageUrl}
+            onChange={(e) => setNewImageUrl(e.target.value)}
+            className="image-input"
+            onKeyDown={(e) => e.key === 'Enter' && handleAddImageUrl()}
+          />
+          <button onClick={handleAddImageUrl} className="add-image-button">URL hinzufügen</button>
+        </div>
         <div className="add-special-buttons">
           {!config.availableImages.includes(PLAYER_SLIDE) && (
             <button onClick={handleAddPlayer} className="add-player-button">
@@ -304,7 +342,7 @@ function Config() {
                     <span>Player</span>
                   </div>
                 ) : (
-                  <img src={`/img/${slide}`} alt={slide} className="image-thumbnail" />
+                  <img src={isImageUrl(slide) ? slide : `/img/${slide}`} alt={slide} className="image-thumbnail" />
                 )}
                 <span className="image-name">{getSlideDisplayName(slide)}</span>
                 <div className="image-actions">
