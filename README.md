@@ -1,2 +1,0 @@
-# winterball-player
-
