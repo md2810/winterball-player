@@ -7,16 +7,20 @@ interface SpotifyTrack {
   artists: string[]
   albumArt: string
   isPlaying: boolean
+  progressMs: number
+  durationMs: number
 }
 
 function Player() {
-  const [track, setTrack] = useState<SpotifyTrack | null>(null)
-  const [prevTrack, setPrevTrack] = useState<SpotifyTrack | null>(null)
+  const [currentTrack, setCurrentTrack] = useState<SpotifyTrack | null>(null)
+  const [nextTrack, setNextTrack] = useState<SpotifyTrack | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [config, setConfig] = useState<PlayerConfig>(defaultConfig)
-  const transitionTimeoutRef = useRef<number | null>(null)
+  const [progress, setProgress] = useState(0)
+  const lastFetchTime = useRef<number>(Date.now())
+  const lastProgressMs = useRef<number>(0)
 
   useEffect(() => {
     const unsubscribe = subscribeToConfig((newConfig) => {
@@ -37,6 +41,22 @@ function Player() {
     }
   }, [isAuthenticated])
 
+  // Smooth progress interpolation
+  useEffect(() => {
+    if (!currentTrack || !currentTrack.isPlaying) return
+
+    const updateProgress = () => {
+      const elapsed = Date.now() - lastFetchTime.current
+      const estimatedProgress = lastProgressMs.current + elapsed
+      const percentage = Math.min((estimatedProgress / currentTrack.durationMs) * 100, 100)
+      setProgress(percentage)
+    }
+
+    updateProgress()
+    const interval = setInterval(updateProgress, 50)
+    return () => clearInterval(interval)
+  }, [currentTrack])
+
   const checkAuth = async () => {
     try {
       const response = await fetch('/api/auth/status')
@@ -55,24 +75,30 @@ function Player() {
         return
       }
       if (response.status === 204) {
-        if (track) {
+        if (currentTrack) {
           triggerTransition(null)
-        } else {
-          setTrack(null)
         }
         return
       }
-      const data = await response.json()
+      const data = await response.json() as SpotifyTrack
       if (data.error) {
-        setError(data.error)
+        setError(data.error as string)
         return
       }
 
+      // Update progress tracking
+      lastFetchTime.current = Date.now()
+      lastProgressMs.current = data.progressMs
+
       // Check if track changed
-      if (track && (track.name !== data.name || track.albumArt !== data.albumArt)) {
+      if (currentTrack && (currentTrack.name !== data.name || currentTrack.albumArt !== data.albumArt)) {
         triggerTransition(data)
-      } else if (!track) {
-        setTrack(data)
+      } else if (!currentTrack) {
+        setCurrentTrack(data)
+        setProgress((data.progressMs / data.durationMs) * 100)
+      } else {
+        // Same track, just update progress
+        setCurrentTrack(data)
       }
       setError(null)
     } catch (err) {
@@ -82,34 +108,39 @@ function Player() {
   }
 
   const triggerTransition = (newTrack: SpotifyTrack | null) => {
-    if (transitionTimeoutRef.current) {
-      clearTimeout(transitionTimeoutRef.current)
-    }
+    if (isTransitioning) return
 
-    setPrevTrack(track)
+    setNextTrack(newTrack)
     setIsTransitioning(true)
 
-    transitionTimeoutRef.current = window.setTimeout(() => {
-      setTrack(newTrack)
+    setTimeout(() => {
+      setCurrentTrack(newTrack)
+      setNextTrack(null)
       setIsTransitioning(false)
-      setPrevTrack(null)
-    }, 500)
+      if (newTrack) {
+        setProgress((newTrack.progressMs / newTrack.durationMs) * 100)
+        lastProgressMs.current = newTrack.progressMs
+        lastFetchTime.current = Date.now()
+      }
+    }, 800)
   }
 
   const handleLogin = () => {
     window.location.href = '/api/auth/login'
   }
 
-  const containerStyle = {
-    transform: `scale(${config.scale})`,
-    transformOrigin: 'center center'
-  }
+  // Calculate scaled sizes based on config
+  const scale = config.scale
+  const coverSize = Math.round(500 * scale)
+  const titleSize = 7 * scale
+  const artistSize = 3.5 * scale
+  const gap = Math.round(100 * scale)
 
   const backgroundClass = config.backgroundMode === 'black' ? 'background-black' : ''
 
   if (!isAuthenticated) {
     return (
-      <div className={`player-container ${backgroundClass}`} style={containerStyle}>
+      <div className={`player-container ${backgroundClass}`}>
         <button className="login-button" onClick={handleLogin}>
           Mit Spotify verbinden
         </button>
@@ -119,69 +150,110 @@ function Player() {
 
   if (error) {
     return (
-      <div className={`player-container ${backgroundClass}`} style={containerStyle}>
+      <div className={`player-container ${backgroundClass}`}>
         <p className="error">{error}</p>
       </div>
     )
   }
 
-  if (!track && !prevTrack) {
+  if (!currentTrack && !nextTrack) {
     return (
-      <div className={`player-container ${backgroundClass}`} style={containerStyle}>
+      <div className={`player-container ${backgroundClass}`}>
         <p className="no-track">Kein Song wird gerade abgespielt</p>
       </div>
     )
   }
 
-  const displayTrack = isTransitioning ? prevTrack : track
-
   return (
-    <div className={`player-container ${backgroundClass}`} style={containerStyle}>
-      {config.backgroundMode === 'cover' && displayTrack && (
+    <div className={`player-container ${backgroundClass}`}>
+      {/* Background layers */}
+      {config.backgroundMode === 'cover' && (
         <>
-          <div
-            className={`background-blur ${isTransitioning ? 'fade-out' : 'fade-in'}`}
-            style={{ backgroundImage: `url(${displayTrack.albumArt})` }}
-          />
-          {isTransitioning && track && (
+          {currentTrack && (
             <div
-              className="background-blur fade-in"
-              style={{ backgroundImage: `url(${track.albumArt})` }}
+              className={`background-blur ${isTransitioning ? 'fading-out' : ''}`}
+              style={{ backgroundImage: `url(${currentTrack.albumArt})` }}
+            />
+          )}
+          {nextTrack && isTransitioning && (
+            <div
+              className="background-blur fading-in"
+              style={{ backgroundImage: `url(${nextTrack.albumArt})` }}
             />
           )}
         </>
       )}
 
-      <div className={`content-wrapper ${isTransitioning ? 'transitioning' : ''}`}>
-        <div className="album-art-container">
-          <img
-            src={displayTrack?.albumArt}
-            alt="Album Cover"
-            className={`album-art ${isTransitioning ? 'fade-out' : 'fade-in'}`}
+      {/* Progress bar */}
+      {config.showProgressBar && currentTrack && (
+        <div className="progress-bar-container">
+          <div
+            className="progress-bar"
+            style={{ width: `${progress}%` }}
           />
-          {isTransitioning && track && (
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="content-wrapper" style={{ gap: `${gap}px` }}>
+        {/* Album art */}
+        <div className="album-art-wrapper" style={{ width: coverSize, height: coverSize }}>
+          {currentTrack && (
             <img
-              src={track.albumArt}
+              src={currentTrack.albumArt}
               alt="Album Cover"
-              className="album-art album-art-new fade-in"
+              className={`album-art ${isTransitioning ? 'fading-out' : ''}`}
+              style={{ width: coverSize, height: coverSize }}
+            />
+          )}
+          {nextTrack && isTransitioning && (
+            <img
+              src={nextTrack.albumArt}
+              alt="Album Cover"
+              className="album-art fading-in"
+              style={{ width: coverSize, height: coverSize }}
             />
           )}
         </div>
+
+        {/* Track info */}
         <div className="track-info">
-          <h1 className={`track-name ${isTransitioning ? 'fade-out' : 'fade-in'}`}>
-            {displayTrack?.name}
-          </h1>
-          {isTransitioning && track && (
-            <h1 className="track-name track-name-new fade-in">{track.name}</h1>
-          )}
-          <p className={`track-artists ${isTransitioning ? 'fade-out' : 'fade-in'}`}>
-            {displayTrack?.artists.join(', ')}
-          </p>
-          {isTransitioning && track && (
-            <p className="track-artists track-artists-new fade-in">
-              {track.artists.join(', ')}
-            </p>
-          )}
+          <div className="track-name-wrapper">
+            {currentTrack && (
+              <h1
+                className={`track-name ${isTransitioning ? 'fading-out' : ''}`}
+                style={{ fontSize: `${titleSize}rem` }}
+              >
+                {currentTrack.name}
+              </h1>
+            )}
+            {nextTrack && isTransitioning && (
+              <h1
+                className="track-name fading-in"
+                style={{ fontSize: `${titleSize}rem` }}
+              >
+                {nextTrack.name}
+              </h1>
+            )}
+          </div>
+          <div className="track-artists-wrapper">
+            {currentTrack && (
+              <p
+                className={`track-artists ${isTransitioning ? 'fading-out' : ''}`}
+                style={{ fontSize: `${artistSize}rem` }}
+              >
+                {currentTrack.artists.join(', ')}
+              </p>
+            )}
+            {nextTrack && isTransitioning && (
+              <p
+                className="track-artists fading-in"
+                style={{ fontSize: `${artistSize}rem` }}
+              >
+                {nextTrack.artists.join(', ')}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

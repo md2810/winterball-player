@@ -10,7 +10,9 @@ interface SpotifyTrack {
     album: {
       images: Array<{ url: string; width: number; height: number }>
     }
+    duration_ms: number
   }
+  progress_ms: number
   is_playing: boolean
 }
 
@@ -94,7 +96,9 @@ async function fetchCurrentlyPlaying(accessToken: string) {
     name: data.item.name,
     artists: data.item.artists.map(a => a.name),
     albumArt: albumArt,
-    isPlaying: data.is_playing
+    isPlaying: data.is_playing,
+    progressMs: data.progress_ms,
+    durationMs: data.item.duration_ms
   }
 }
 

@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { getDatabase, ref, onValue, set } from 'firebase/database'
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth'
 
-// Firebase configuration - replace with your own
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
@@ -14,15 +14,18 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 const database = getDatabase(app)
+const auth = getAuth(app)
 
 export interface PlayerConfig {
   scale: number
   backgroundMode: 'cover' | 'black'
+  showProgressBar: boolean
 }
 
 export const defaultConfig: PlayerConfig = {
   scale: 1,
-  backgroundMode: 'cover'
+  backgroundMode: 'cover',
+  showProgressBar: true
 }
 
 const configRef = ref(database, 'config')
@@ -43,4 +46,16 @@ export async function updateConfig(config: Partial<PlayerConfig>) {
   await set(currentRef, config)
 }
 
-export { database }
+export async function login(email: string, password: string) {
+  return signInWithEmailAndPassword(auth, email, password)
+}
+
+export async function logout() {
+  return signOut(auth)
+}
+
+export function subscribeToAuth(callback: (user: User | null) => void) {
+  return onAuthStateChanged(auth, callback)
+}
+
+export { database, auth }
