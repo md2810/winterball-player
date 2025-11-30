@@ -92,6 +92,10 @@ function App() {
 
   return (
     <div className="player-container">
+      <div
+        className="background-blur"
+        style={{ backgroundImage: `url(${track.albumArt})` }}
+      />
       <div className="album-art-container">
         <img src={track.albumArt} alt="Album Cover" className="album-art" />
       </div>
